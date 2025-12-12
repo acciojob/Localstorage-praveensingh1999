@@ -1,55 +1,50 @@
- const addItems = document.querySelector('.add-items');  // form
-  const itemsList = document.querySelector('.plates');    // div where <li> will be added
+ocument.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("itemForm");
+    const input = document.getElementById("itemInput");
+    const platesDiv = document.getElementById("plates");
 
-  // Load saved items OR empty array
-  const items = JSON.parse(localStorage.getItem('items')) || [];
-
-  // Add item function
-  function addItem(e) {
-    e.preventDefault(); // stop page refresh
-
-    const text = this.querySelector('[name=item]').value;
-
-    const item = {
-      text,
-      done: false
+    // Load existing items from localStorage
+    const loadItems = () => {
+        const items = JSON.parse(localStorage.getItem("plates")) || [];
+        items.forEach((item, index) => {
+            addItemToList(item, index);
+        });
     };
 
-    items.push(item);
-    localStorage.setItem('items', JSON.stringify(items));
-    populateList(items, itemsList);
+    // Add item to the list and localStorage
+    const addItemToList = (item, index) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <input type="checkbox" data-index="${index}" id="item${index}" ${item.done ? 'checked' : ''} />
+            <label for="item${index}">${item.name}</label>
+        `;
+        platesDiv.appendChild(li);
+    };
 
-    this.reset(); // clear input field
-  }
+    // Handle form submission
+    form.addEventListener("submit", function (event) {
+        event.preventDefault(); // Prevent page refresh
+        const itemName = input.value.trim();
+        if (itemName) {
+            const items = JSON.parse(localStorage.getItem("plates")) || [];
+            const newItem = { name: itemName, done: false };
+            items.push(newItem);
+            localStorage.setItem("plates", JSON.stringify(items));
+            addItemToList(newItem, items.length - 1);
+            input.value = ""; // Clear input field
+        }
+    });
 
-  // Render items inside plates div
-  function populateList(plates = [], platesList) {
-    platesList.innerHTML = plates
-      .map((plate, i) => {
-        return `
-        <li>
-          <input type="checkbox" data-index=${i} id="item${i}" ${plate.done ? 'checked' : ''} />
-          <label for="item${i}">${plate.text}</label>
-        </li>
-      `;
-      })
-      .join('');
-  }
+    // Handle checkbox changes
+    platesDiv.addEventListener("change", function (event) {
+        if (event.target.matches("input[type='checkbox']")) {
+            const index = event.target.dataset.index;
+            const items = JSON.parse(localStorage.getItem("plates")) || [];
+            items[index].done = event.target.checked;
+            localStorage.setItem("plates", JSON.stringify(items));
+        }
+    });
 
-  // Toggle checkbox status (done / not done)
-  function toggleDone(e) {
-    if (!e.target.matches('input')) return;
-
-    const index = e.target.dataset.index;
-    items[index].done = !items[index].done;
-
-    localStorage.setItem('items', JSON.stringify(items));
-    populateList(items, itemsList);
-  }
-
-  // Event listeners
-  addItems.addEventListener('submit', addItem);
-  itemsList.addEventListener('click', toggleDone);
-
-  // Initial load
-  populateList(items, itemsList);
+    // Load items on page load
+    loadItems();
+});
